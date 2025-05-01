@@ -26,7 +26,7 @@ It is designed to be lightweight, modular, and deployable locally with minimal c
 
 ## Architecture
 
-![AI Pipeline Architecture Diagram](docs/architecture-diagram.mermaid)
+![AI Pipeline Architecture Diagram](docs/architecture.png)
 
 The system follows a modular architecture with these key components:
 
