@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pipeline Architecture - Interactive Diagram</title>
+    <style>
+        :root {
+            --primary-blue: #0071E3;
+            --secondary-gray: #F5F5F7;
+            --dark-mode: #2D2F38;
+            --red-alert: #FF3B30;
+            --purple-accent: #5E5CE6;
+            --orange-accent: #FF9500;
+            --text-primary: #1D1D1F;
+            --text-secondary: #86868B;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background-color: #FFFFFF;
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin: 20px 0 40px;
+        }
+
+        h1 {
+            font-size: 38px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #0071E3, #5E5CE6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .diagram-container {
+            position: relative;
+            height: 720px;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: var(--box-shadow);
+            background-color: var(--secondary-gray);
+        }
+
+        .module {
+            position: absolute;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s ease;
+            opacity: 0.9;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .module:hover {
+            transform: translateY(-5px);
+            opacity: 1;
+            z-index: 100;
+        }
+
+        .module h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .module p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .primary {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        .secondary {
+            background-color: white;
+            color: var(--text-primary);
+            border: 1px solid #E5E5E5;
+        }
+
+        .datastore {
+            background-color: var(--dark-mode);
+            color: white;
+        }
+
+        .fallback {
+            background-color: var(--red-alert);
+            color: white;
+        }
+
+        .frontend {
+            background-color: var(--purple-accent);
+            color: white;
+        }
+
+        .orchestration {
+            background-color: var(--orange-accent);
+            color: white;
+        }
+
+        .connection {
+            position: absolute;
+            height: 2px;
+            background-color: #86868B;
+            transform-origin: left center;
+            z-index: 1;
+            opacity: 0.5;
+        }
+
+        .connection.active {
+            background-color: var(--primary-blue);
+            opacity: 1;
+            height: 3px;
+            box-shadow: 0 0 8px rgba(0, 113, 227, 0.5);
+        }
+
+        .endpoint {
+            position: absolute;
+            padding: 8px 12px;
+            border-radius: 20px;
+            background-color: white;
+            color: var(--text-primary);
+            font-size: 12px;
+            box-shadow: var(--box-shadow);
+            z-index: 2;
+        }
+
+        .data-flow {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--primary-blue);
+            opacity: 0;
+            z-index: 10;
+        }
+
+        .info-panel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 280px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+            padding: 15px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .info-panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .info-panel h3 {
+            color: var(--primary-blue);
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .info-panel p {
+            font-size: 13px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .button {
+            padding: 10px 15px;
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--box-shadow);
+            transition: all 0.2s ease;
+        }
+
+        .button:hover {
+            background-color: #0062C3;
+            transform: scale(1.05);
+        }
+
+        .button.secondary {
+            background-color: var(--secondary-gray);
+            color: var(--text-primary);
+        }
+
+        .button.secondary:hover {
+            background-color: #E5E5E7;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+            padding: 15px;
+            z-index: 1000;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        .legend-text {
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .subgraph {
+            position: absolute;
+            border: 1px dashed #86868B;
+            border-radius: 15px;
+            padding: 15px;
+            z-index: 0;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .subgraph-title {
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background-color: white;
+            padding: 0 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .diagram-container {
+                height: 1200px;
+            }
+
+            .info-panel {
+                bottom: 70px;
+                left: 50%;
+                transform: translateX(-50%) translateY(20px);
+                width: 90%;
+            }
+
+            .info-panel.visible {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            .controls {
+                left: 0;
+                right: 0;
+                bottom: 0;
+                flex-direction: row;
+                justify-content: center;
+                padding: 10px;
+                background-color: white;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Pipeline Architecture</h1>
+            <p>Interactive visualization of ETL, RAG, and Orchestration components</p>
+        </header>
+
+        <div class="diagram-container" id="diagram">
+            <!-- Subgraphs will be added here -->
+
+            <!-- Modules will be added here -->
+
+            <!-- Connections will be added here -->
+
+            <!-- Legend for the diagram -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--primary-blue);"></div>
+                    <div class="legend-text">Core Process</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: white;"></div>
+                    <div class="legend-text">Secondary Component</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--dark-mode);"></div>
+                    <div class="legend-text">Data Store</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--red-alert);"></div>
+                    <div class="legend-text">Fallback Component</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--purple-accent);"></div>
+                    <div class="legend-text">Frontend</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: var(--orange-accent);"></div>
+                    <div class="legend-text">Orchestration</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel" id="info-panel">
+            <h3>Component Details</h3>
+            <p id="info-content">Click on any component to see details</p>
+        </div>
+
+        <div class="controls">
+            <button class="button" id="simulate-flow">Simulate Data Flow</button>
+            <button class="button secondary" id="reset-diagram">Reset View</button>
+        </div>
+    </div>
+
+    <script>
+        // Define the modules for the diagram
+        const modules = [
+            // User Entry
+            { id: 'user', type: 'secondary', x: 100, y: 50, width: 100, height: 50, title: 'User', description: 'End user who interacts with the system through the frontend' },
+            { id: 'devops', type: 'secondary', x: 100, y: 150, width: 100, height: 50, title: 'DevOps', description: 'Operations team who manages and monitors the system through Airflow' },
+
+            // Frontend Layer
+            { id: 'reactUI', type: 'frontend', x: 250, y: 50, width: 150, height: 70, title: 'React Frontend', description: 'User interface built with React, provides interactive dashboard and question interface' },
+
+            // API Layer
+            { id: 'apiLayer', type: 'secondary', x: 450, y: 50, width: 150, height: 70, title: 'FastAPI Service', description: 'Backend API service built with FastAPI, provides endpoints for frontend and orchestration' },
+            { id: 'askEndpoint', type: 'secondary', x: 450, y: 160, width: 120, height: 40, title: 'Ask Endpoint', description: 'Endpoint for querying the RAG system with natural language questions' },
+            { id: 'etlEndpoint', type: 'secondary', x: 450, y: 210, width: 120, height: 40, title: 'ETL Endpoint', description: 'Endpoint for triggering ETL processes and data ingestion' },
+            { id: 'vectorEndpoint', type: 'secondary', x: 450, y: 260, width: 120, height: 40, title: 'Vector Endpoint', description: 'Endpoint for managing and initializing vector embeddings' },
+            { id: 'healthEndpoint', type: 'secondary', x: 450, y: 310, width: 120, height: 40, title: 'Health Endpoint', description: 'Endpoint for checking system health and component status' },
+
+            // RAG System
+            { id: 'ragProcess', type: 'primary', x: 650, y: 160, width: 140, height: 70, title: 'RAG Process', description: 'Retrieval Augmented Generation orchestration process that combines context retrieval with language generation' },
+            { id: 'vectorSearch', type: 'secondary', x: 650, y: 260, width: 140, height: 60, title: 'Vector Search', description: 'Semantic search over vector embeddings to find relevant context' },
+            { id: 'faiss', type: 'datastore', x: 850, y: 260, width: 120, height: 60, title: 'FAISS Index', description: 'Vector database that stores embeddings for efficient similarity search' },
+
+            // LLM Providers
+            { id: 'modelSelector', type: 'secondary', x: 850, y: 160, width: 120, height: 60, title: 'Model Provider', description: 'Selection logic for LLM provider with fallback chain' },
+            { id: 'huggingface', type: 'secondary', x: 1000, y: 120, width: 120, height: 50, title: 'HuggingFace', description: 'Primary open-source LLM provider' },
+            { id: 'openai', type: 'secondary', x: 1000, y: 180, width: 120, height: 50, title: 'OpenAI', description: 'Fallback commercial LLM provider' },
+            { id: 'mockLLM', type: 'fallback', x: 1000, y: 240, width: 120, height: 50, title: 'Mock LLM', description: 'Final fallback for demo operation without API keys' },
+
+            // Answer Generation
+            { id: 'answerGen', type: 'secondary', x: 850, y: 360, width: 140, height: 60, title: 'Answer Generation', description: 'Combines retrieved context with LLM to generate answers' },
+            { id: 'userResponse', type: 'secondary', x: 650, y: 360, width: 140, height: 60, title: 'User Response', description: 'Final formatted response sent back to the user' },
+
+            // ETL Pipeline
+            { id: 'etlProcess', type: 'primary', x: 650, y: 460, width: 140, height: 70, title: 'ETL Process', description: 'Extract, Transform, Load process for ingesting and processing data' },
+            { id: 'dataExtraction', type: 'secondary', x: 450, y: 460, width: 140, height: 60, title: 'Data Extraction', description: 'Extracts data from various sources including APIs and files' },
+            { id: 'dataTransformation', type: 'secondary', x: 650, y: 540, width: 140, height: 60, title: 'Data Transformation', description: 'Transforms raw data into structured format with derived features' },
+            { id: 'dataLoading', type: 'secondary', x: 850, y: 460, width: 140, height: 60, title: 'Data Loading', description: 'Loads processed data into the database' },
+            { id: 'duckDB', type: 'datastore', x: 850, y: 540, width: 120, height: 60, title: 'DuckDB', description: 'Embedded analytical database for storing processed data' },
+
+            // Vector Store Management
+            { id: 'embeddingsCreation', type: 'secondary', x: 650, y: 620, width: 140, height: 60, title: 'Embeddings Creation', description: 'Creates vector embeddings from text data' },
+            { id: 'embeddingsSelector', type: 'secondary', x: 850, y: 620, width: 120, height: 60, title: 'Embeddings Provider', description: 'Selection logic for embeddings provider with fallback chain' },
+            { id: 'hfEmbeddings', type: 'secondary', x: 1000, y: 580, width: 120, height: 50, title: 'HF Embeddings', description: 'Primary open-source embeddings provider' },
+            { id: 'openaiEmbeddings', type: 'secondary', x: 1000, y: 640, width: 120, height: 50, title: 'OpenAI Embeddings', description: 'Fallback commercial embeddings provider' },
+            { id: 'mockEmbeddings', type: 'fallback', x: 1000, y: 700, width: 120, height: 50, title: 'Mock Embeddings', description: 'Final fallback for demo operation without API keys' },
+            { id: 'vectorIndexing', type: 'secondary', x: 850, y: 400, width: 140, height: 60, title: 'Vector Indexing', description: 'Indexes vector embeddings in FAISS for efficient search' },
+
+            // Airflow Orchestration
+            { id: 'airflowUI', type: 'orchestration', x: 250, y: 150, width: 150, height: 70, title: 'Airflow UI', description: 'Web interface for monitoring and managing workflows' },
+            { id: 'airflowDAG', type: 'orchestration', x: 250, y: 250, width: 150, height: 70, title: 'AI Pipeline DAG', description: 'Directed Acyclic Graph that defines the workflow' },
+            { id: 'etlTask', type: 'orchestration', x: 250, y: 350, width: 120, height: 50, title: 'ETL Task', description: 'Scheduled task for running ETL processes' },
+            { id: 'vectorTask', type: 'orchestration', x: 250, y: 410, width: 120, height: 50, title: 'Vector Task', description: 'Scheduled task for updating vector embeddings' },
+            { id: 'healthTask', type: 'orchestration', x: 250, y: 470, width: 120, height: 50, title: 'Health Task', description: 'Scheduled task for monitoring system health' }
+        ];
+
+        // Define the connections between modules
+        const connections = [
+            { from: 'user', to: 'reactUI', type: 'solid' },
+            { from: 'devops', to: 'airflowUI', type: 'solid' },
+            { from: 'reactUI', to: 'apiLayer', type: 'solid' },
+            { from: 'apiLayer', to: 'askEndpoint', type: 'solid' },
+            { from: 'apiLayer', to: 'etlEndpoint', type: 'solid' },
+            { from: 'apiLayer', to: 'vectorEndpoint', type: 'solid' },
+            { from: 'apiLayer', to: 'healthEndpoint', type: 'solid' },
+            { from: 'askEndpoint', to: 'ragProcess', type: 'solid' },
+            { from: 'ragProcess', to: 'modelSelector', type: 'solid' },
+            { from: 'ragProcess', to: 'vectorSearch', type: 'solid' },
+            { from: 'modelSelector', to: 'huggingface', type: 'solid' },
+            { from: 'modelSelector', to: 'openai', type: 'solid' },
+            { from: 'modelSelector', to: 'mockLLM', type: 'solid' },
+            { from: 'vectorSearch', to: 'faiss', type: 'solid' },
+            { from: 'huggingface', to: 'answerGen', type: 'solid' },
+            { from: 'openai', to: 'answerGen', type: 'solid' },
+            { from: 'mockLLM', to: 'answerGen', type: 'solid' },
+            { from: 'faiss', to: 'answerGen', type: 'solid' },
+            { from: 'answerGen', to: 'userResponse', type: 'solid' },
+            { from: 'userResponse', to: 'reactUI', type: 'dashed' },
+            { from: 'etlEndpoint', to: 'etlProcess', type: 'solid' },
+            { from: 'etlProcess', to: 'dataExtraction', type: 'solid' },
+            { from: 'dataExtraction', to: 'dataTransformation', type: 'solid' },
+            { from: 'dataTransformation', to: 'dataLoading', type: 'solid' },
+            { from: 'dataLoading', to: 'duckDB', type: 'solid' },
+            { from: 'duckDB', to: 'vectorSearch', type: 'dashed' },
+            { from: 'vectorEndpoint', to: 'embeddingsCreation', type: 'solid' },
+            { from: 'embeddingsCreation', to: 'embeddingsSelector', type: 'solid' },
+            { from: 'embeddingsSelector', to: 'hfEmbeddings', type: 'solid' },
+            { from: 'embeddingsSelector', to: 'openaiEmbeddings', type: 'solid' },
+            { from: 'embeddingsSelector', to: 'mockEmbeddings', type: 'solid' },
+            { from: 'hfEmbeddings', to: 'vectorIndexing', type: 'solid' },
+            { from: 'openaiEmbeddings', to: 'vectorIndexing', type: 'solid' },
+            { from: 'mockEmbeddings', to: 'vectorIndexing', type: 'solid' },
+            { from: 'vectorIndexing', to: 'faiss', type: 'solid' },
+            { from: 'duckDB', to: 'vectorIndexing', type: 'dashed' },
+            { from: 'airflowUI', to: 'airflowDAG', type: 'solid' },
+            { from: 'airflowDAG', to: 'etlTask', type: 'solid' },
+            { from: 'airflowDAG', to: 'vectorTask', type: 'solid' },
+            { from: 'airflowDAG', to: 'healthTask', type: 'solid' },
+            { from: 'etlTask', to: 'etlEndpoint', type: 'dashed' },
+            { from: 'vectorTask', to: 'vectorEndpoint', type: 'dashed' },
+            { from: 'healthTask', to: 'healthEndpoint', type: 'dashed' }
+        ];
+
+        // Define the subgraphs
+        const subgraphs = [
+            { id: 'frontend-layer', title: 'Frontend Layer', x: 230, y: 30, width: 190, height: 110 },
+            { id: 'api-layer', title: 'API Layer', x: 430, y: 30, width: 190, height: 340 },
+            { id: 'rag-system', title: 'Multi-Provider RAG System', x: 630, y: 100, width: 510, height: 340 },
+            { id: 'etl-pipeline', title: 'ETL Data Pipeline', x: 430, y: 430, width: 580, height: 190 },
+            { id: 'vector-management', title: 'Vector Store Management', x: 630, y: 560, width: 510, height: 210 },
+            { id: 'airflow-orchestration', title: 'Airflow Orchestration', x: 230, y: 230, width: 190, height: 310 }
+        ];
+
+        // Flow paths for animation - each array represents a sequence of module IDs to follow
+        const flowPaths = [
+            // User question flow path
+            ['user', 'reactUI', 'apiLayer', 'askEndpoint', 'ragProcess', 'vectorSearch', 'faiss', 'answerGen', 'userResponse', 'reactUI', 'user'],
+
+            // ETL flow path
+            ['airflowDAG', 'etlTask', 'etlEndpoint', 'etlProcess', 'dataExtraction', 'dataTransformation', 'dataLoading', 'duckDB'],
+
+            // Vector store update flow path
+            ['airflowDAG', 'vectorTask', 'vectorEndpoint', 'embeddingsCreation', 'embeddingsSelector', 'hfEmbeddings', 'vectorIndexing', 'faiss']
+        ];
+
+        // Initialize the diagram
+        function initDiagram() {
+            const diagram = document.getElementById('diagram');
+
+            // Add subgraphs first (so they're behind everything)
+            subgraphs.forEach(subgraph => {
+                const element = document.createElement('div');
+                element.className = 'subgraph';
+                element.id = subgraph.id;
+                element.style.left = `${subgraph.x}px`;
+                element.style.top = `${subgraph.y}px`;
+                element.style.width = `${subgraph.width}px`;
+                element.style.height = `${subgraph.height}px`;
+
+                const title = document.createElement('div');
+                title.className = 'subgraph-title';
+                title.textContent = subgraph.title;
+                element.appendChild(title);
+
+                diagram.appendChild(element);
+            });
+
+            // Add modules
+            modules.forEach(module => {
+                const element = document.createElement('div');
+                element.className = `module ${module.type}`;
+                element.id = module.id;
+                element.style.left = `${module.x}px`;
+                element.style.top = `${module.y}px`;
+                element.style.width = `${module.width}px`;
+                element.style.height = `${module.height}px`;
+
+                const title = document.createElement('h3');
+                title.textContent = module.title;
+                element.appendChild(title);
+
+                // Add click event to show info
+                element.addEventListener('click', () => {
+                    showInfo(module);
+                });
+
+                diagram.appendChild(element);
+            });
+
+            // Add connections
+            connections.forEach((connection, index) => {
+                const fromModule = modules.find(m => m.id === connection.from);
+                const toModule = modules.find(m => m.id === connection.to);
+
+                if (fromModule && toModule) {
+                    const fromX = fromModule.x + fromModule.width / 2;
+                    const fromY = fromModule.y + fromModule.height / 2;
+                    const toX = toModule.x + toModule.width / 2;
+                    const toY = toModule.y + toModule.height / 2;
+
+                    const dx = toX - fromX;
+                    const dy = toY - fromY;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                    const element = document.createElement('div');
+                    element.className = `connection ${connection.type === 'dashed' ? 'dashed' : ''}`;
+                    element.id = `connection-${index}`;
+                    element.style.left = `${fromX}px`;
+                    element.style.top = `${fromY}px`;
+                    element.style.width = `${length}px`;
+                    element.style.transform = `rotate(${angle}deg)`;
+
+                    if (connection.type === 'dashed') {
+                        element.style.borderTop = '2px dashed #86868B';
+                        element.style.backgroundColor = 'transparent';
+                    }
+
+                    diagram.appendChild(element);
+                }
+            });
+        }
+
+        // Show info panel for a module
+        function showInfo(module) {
+            const infoPanel = document.getElementById('info-panel');
+            const infoContent = document.getElementById('info-content');
+
+            infoPanel.querySelector('h3').textContent = module.title;
+            infoContent.textContent = module.description;
+
+            infoPanel.classList.add('visible');
+        }
+
+        // Simulate data flow animation
+        function simulateFlow() {
+            // Select a random flow path
+            const pathIndex = Math.floor(Math.random() * flowPaths.length);
+            const path = flowPaths[pathIndex];
+
+            // Create data point element
+            const dataPoint = document.createElement('div');
+            dataPoint.className = 'data-flow';
+            document.getElementById('diagram').appendChild(dataPoint);
+
+            // Animate along the path
+            animateAlongPath(dataPoint, path, 0);
+        }
+
+        // Animate a data point along a path
+        function animateAlongPath(element, path, currentIndex) {
+            if (currentIndex >= path.length - 1) {
+                // End of path, remove the element
+                element.remove();
+                return;
+            }
+
+            const currentModule = modules.find(m => m.id === path[currentIndex]);
+            const nextModule = modules.find(m => m.id === path[currentIndex + 1]);
+
+            if (!currentModule || !nextModule) {
+                element.remove();
+                return;
+            }
+
+            // Find the connection between these modules
+            const connection = connections.find(c =>
+                (c.from === currentModule.id && c.to === nextModule.id) ||
+                (c.from === nextModule.id && c.to === currentModule.id)
+            );
+
+            if (connection) {
+                // Highlight the connection
+                const connectionElements = document.querySelectorAll('.connection');
+                const connectionIndex = connections.indexOf(connection);
+                connectionElements[connectionIndex].classList.add('active');
+
+                // Remove highlight after animation
+                setTimeout(() => {
+                    connectionElements[connectionIndex].classList.remove('active');
+                }, 1000);
+            }
+
+            // Start position
+            const startX = currentModule.x + currentModule.width / 2;
+            const startY = currentModule.y + currentModule.height / 2;
+
+            // End position
+            const endX = nextModule.x + nextModule.width / 2;
+            const endY = nextModule.y + nextModule.height / 2;
+
+            // Position data point at start
+            element.style.left = `${startX - 5}px`;
+            element.style.top = `${startY - 5}px`;
+            element.style.opacity = '1';
+
+            // Animate to end
+            const duration = 1000; // 1 second
+            const startTime = performance.now();
+
+            function animate(time) {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Calculate current position
+                const currentX = startX + progress * (endX - startX);
+                const currentY = startY + progress * (endY - startY);
+
+                // Update element position
+                element.style.left = `${currentX - 5}px`;
+                element.style.top = `${currentY - 5}px`;
+
+                // Continue animation if not complete
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Move to next segment
+                    setTimeout(() => {
+                        animateAlongPath(element, path, currentIndex + 1);
+                    }, 200);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Reset the diagram
+        function resetDiagram() {
+            const infoPanel = document.getElementById('info-panel');
+            infoPanel.classList.remove('visible');
+
+            // Remove all data points
+            document.querySelectorAll('.data-flow').forEach(el => el.remove());
+
+            // Remove all active connections
+            document.querySelectorAll('.connection.active').forEach(el => el.classList.remove('active'));
+        }
+
+        // Initialize the diagram when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initDiagram();
+
+            // Add event listeners for controls
+            document.getElementById('simulate-flow').addEventListener('click', simulateFlow);
+            document.getElementById('reset-diagram').addEventListener('click', resetDiagram);
+        });
+    </script>
+</body>
+</html>

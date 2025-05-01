@@ -1,0 +1,30 @@
+# Core dependencies
+fastapi==0.115.12
+uvicorn==0.23.2
+python-dotenv==1.0.0
+pydantic==2.0.3
+
+# LangChain ecosystem - updated versions
+langchain==0.0.335
+langchain-community==0.0.17
+openai==1.10.0  # Updated to match langchain-openai requirements
+langchain-openai
+tiktoken==0.5.2
+faiss-cpu==1.7.4
+
+# Hugging Face ecosystem
+transformers==4.32.1
+sentence-transformers==2.2.2
+huggingface-hub==0.16.4
+torch>=1.10.0
+
+# Data dependencies
+numpy==1.24.3
+pandas==2.0.3
+duckdb==0.8.1
+sqlalchemy==2.0.21
+
+# Testing
+pytest==7.4.2
+pytest-cov==4.1.0
+pytest-asyncio==0.21.1

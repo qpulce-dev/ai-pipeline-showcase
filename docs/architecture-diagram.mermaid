@@ -1,0 +1,125 @@
+flowchart TD
+    %% Apple-inspired clean design with clear hierarchy
+    
+    %% Define the main components with hierarchical structure
+    classDef primary fill:#0071E3,color:white,stroke:none,font-weight:bold,font-family:'SF Pro Display',border-radius:10px
+    classDef secondary fill:#F5F5F7,color:#1D1D1F,stroke:none,font-family:'SF Pro Display',border-radius:8px,font-weight:500
+    classDef datastore fill:#2D2F38,color:white,stroke:none,font-family:'SF Pro Display',border-radius:6px,font-weight:500
+    classDef fallback fill:#FF3B30,color:white,stroke:none,font-family:'SF Pro Display',border-radius:6px,font-weight:bold
+    classDef frontend fill:#5E5CE6,color:white,stroke:none,font-family:'SF Pro Display',border-radius:6px,font-weight:500
+    classDef orchestration fill:#FF9500,color:white,stroke:none,font-family:'SF Pro Display',border-radius:6px,font-weight:500
+    
+    %% Client Entry Points
+    User([User]) --> ReactUI
+    DevOps([DevOps]) --> AirflowUI
+    
+    %% Frontend Layer
+    subgraph "Frontend Layer"
+        ReactUI[React Frontend UI] --> |HTTP| APILayer
+    end
+    
+    %% API Layer
+    subgraph "API Layer"
+        APILayer[FastAPI Service]
+        APILayer --> |POST| AskEndpoint[/ask endpoint/]
+        APILayer --> |POST| ETLEndpoint[/etl/run endpoint/]
+        APILayer --> |POST| VectorEndpoint[/vector/initialize endpoint/]
+        APILayer --> |GET| HealthEndpoint[/health endpoint/]
+    end
+    
+    %% Core Processing
+    subgraph "Multi-Provider RAG System"
+        %% User Question Flow
+        AskEndpoint --> RAGProcess[RAG Process]
+        
+        %% LLM Provider Selection with Fallbacks
+        RAGProcess --> ModelSelector{Model Provider}
+        ModelSelector -->|Primary| HuggingFace[HuggingFace Models]
+        ModelSelector -->|Fallback 1| OpenAI[OpenAI Models]
+        ModelSelector -->|Fallback 2| MockLLM[Mock LLM]
+        
+        %% Vector Store Integration
+        RAGProcess --> VectorSearch[Vector Search]
+        DuckDB -.->|Document\nExtraction| VectorSearch
+        VectorSearch --> FAISS[(FAISS Vector Index)]
+        
+        %% Answer Generation
+        HuggingFace --> AnswerGen[Answer Generation]
+        OpenAI --> AnswerGen
+        MockLLM --> AnswerGen
+        FAISS -->|Context| AnswerGen
+        
+        %% Response
+        AnswerGen --> UserResponse[User Response]
+    end
+    
+    %% Data Pipeline
+    subgraph "ETL Data Pipeline"
+        ETLEndpoint --> ETLProcess[ETL Process]
+        ETLProcess --> DataExtraction[Data Extraction]
+        DataExtraction --> DataTransformation[Data Transformation]
+        DataTransformation --> DataLoading[Data Loading]
+        DataLoading --> DuckDB[(DuckDB)]
+    end
+    
+    %% Vector Store Management
+    subgraph "Vector Store Management"
+        VectorEndpoint --> EmbeddingsCreation[Embeddings Creation]
+        
+        %% Embeddings Provider Selection
+        EmbeddingsCreation --> EmbeddingsSelector{Embeddings Provider}
+        EmbeddingsSelector -->|Primary| HFEmbeddings[HuggingFace Embeddings]
+        EmbeddingsSelector -->|Fallback 1| OpenAIEmbeddings[OpenAI Embeddings]
+        EmbeddingsSelector -->|Fallback 2| MockEmbeddings[Mock Embeddings]
+        
+        HFEmbeddings & OpenAIEmbeddings & MockEmbeddings --> VectorIndexing[Vector Indexing]
+        VectorIndexing --> FAISS
+    end
+    
+    %% Airflow Orchestration
+    subgraph "Airflow Orchestration"
+        AirflowUI[Airflow UI]
+        AirflowDAG[AI Pipeline DAG]
+        AirflowDAG --> |Schedule| ETLTask[ETL Task]
+        AirflowDAG --> |Schedule| VectorTask[Vector Update Task]
+        AirflowDAG --> |Schedule| HealthTask[Health Check Task]
+        
+        ETLTask -.->|Trigger| ETLEndpoint
+        VectorTask -.->|Trigger| VectorEndpoint
+        HealthTask -.->|Monitor| HealthEndpoint
+    end
+    
+    %% Container Orchestration
+    subgraph "Docker Orchestration"
+        DockerCompose[Docker Compose]
+        DockerCompose -.- APIContainer[API Container]
+        DockerCompose -.- FrontendContainer[Frontend Container]
+        DockerCompose -.- AirflowContainer[Airflow Containers]
+        DockerCompose -.- RedisContainer[Redis Container]
+        DockerCompose -.- PostgresContainer[Postgres Container]
+    end
+    
+    %% Data Flow Lines
+    UserResponse -.->|Response| ReactUI
+    DuckDB -.->|Product Data| VectorIndexing
+    
+    %% Make Containers and Users stand out
+    ReactUI:::frontend
+    AirflowUI:::orchestration
+    
+    %% Style all endpoints
+    AskEndpoint & ETLEndpoint & VectorEndpoint & HealthEndpoint:::secondary
+    
+    %% Style key processes
+    ETLProcess & RAGProcess:::primary
+    
+    %% Style fallbacks
+    MockLLM & MockEmbeddings:::fallback
+    
+    %% Style data stores
+    DuckDB & FAISS:::datastore
+    
+    %% Other styles
+    ModelSelector & EmbeddingsSelector:::secondary
+    AirflowDAG & ETLTask & VectorTask & HealthTask:::orchestration
+    DockerCompose & APIContainer & FrontendContainer & AirflowContainer & RedisContainer & PostgresContainer:::secondary
