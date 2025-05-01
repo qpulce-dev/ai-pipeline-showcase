@@ -58,7 +58,7 @@ The system follows a modular architecture with these key components:
 
 ##### Interactive Architecture Diagram
 
-For an interactive version of the architecture diagram, [click here](https://yourusername.github.io/ai-pipeline-showcase/interactive-diagram.html).
+For an interactive version of the architecture diagram, [click here](https://qpulce-dev.github.io/ai-pipeline-showcase/).
 
 ## System Requirements
 

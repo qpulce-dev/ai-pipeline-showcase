@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pipeline Architecture</title>
+    <!-- Load React -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Load Babel for JSX support -->
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: white;
+            color: #202020;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 0 rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.4);
+                transform: scale(1);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+                transform: scale(1.05);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+                transform: scale(1);
+            }
+        }
+
+        .active {
+            stroke: #1B67B2 !important;
+            stroke-width: 3px !important;
+            filter: drop-shadow(0 0 3px rgba(27, 103, 178, 0.5));
+        }
+
+        .data-point {
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8));
+        }
+
+        .expanded-module {
+            transform: scale(1.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .connection-label {
+            text-shadow: 0px 0px 2px white, 0px 0px 2px white, 0px 0px 2px white, 0px 0px 2px white;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Main App Component
+        const AIPipelineVisualization = () => {
+            const [activeModule, setActiveModule] = React.useState(null);
+            const [activeSubmodule, setActiveSubmodule] = React.useState(null);
+            const [isAnimating, setIsAnimating] = React.useState(false);
+            const [currentFlow, setCurrentFlow] = React.useState(null);
+            const [showApiCallout, setShowApiCallout] = React.useState(null);
+            const svgRef = React.useRef(null);
+
+            // Color palette
+            const COLORS = {
+                RED: '#B54369',
+                PURPLE: '#4D44AB',
+                BLUE: '#1B67B2',
+                BLACK: '#202020',
+                GREEN: '#568C1C',
+                ORANGE: '#C77F1A',
+                TEAL: '#2A9D8F',
+                YELLOW: '#E9C46A',
+                LIGHT_BLUE: '#4CC9F0'
+            };
+
+            // Core components of the pipeline
+            const modules = [
+                {
+                    id: 'frontend',
+                    x: 100,
+                    y: 100,
+                    width: 120,
+                    height: 70,
+                    color: COLORS.PURPLE,
+                    title: 'React Frontend',
+                    description: 'User interface for interacting with the AI pipeline. Built with React and modern UI libraries for a responsive experience.',
+                    icon: '💻',
+                    submodules: [
+                        {
+                            id: 'frontend-components',
+                            title: 'UI Components',
+                            description: 'Built with React 18 using functional components and hooks. Uses Tailwind CSS for styling.',
+                            icon: '🧩'
+                        },
+                        {
+                            id: 'frontend-state',
+                            title: 'State Management',
+                            description: 'Uses React Context API for global state management. Implements custom hooks for API interactions.',
+                            icon: '🔄'
+                        },
+                        {
+                            id: 'frontend-api',
+                            title: 'API Integration',
+                            description: 'Axios-based API client with request interceptors for authentication and error handling.',
+                            icon: '📡'
+                        }
+                    ],
+                    apis: ['GET /health', 'POST /ask', 'GET /status']
+                },
+                {
+                    id: 'api',
+                    x: 300,
+                    y: 100,
+                    width: 120,
+                    height: 70,
+                    color: COLORS.BLUE,
+                    title: 'FastAPI Layer',
+                    description: 'Asynchronous API service built with FastAPI that provides endpoints for the frontend and orchestration tools.',
+                    icon: '🔌',
+                    submodules: [
+                        {
+                            id: 'api-routes',
+                            title: 'API Routes',
+                            description: 'RESTful endpoints with OpenAPI documentation. Implements dependency injection for services.',
+                            icon: '🛣️'
+                        },
+                        {
+                            id: 'api-validation',
+                            title: 'Request Validation',
+                            description: 'Pydantic models for request/response validation with automatic JSON schema generation.',
+                            icon: '✅'
+                        },
+                        {
+                            id: 'api-middleware',
+                            title: 'Middleware',
+                            description: 'CORS, authentication, and request logging middleware. Implements rate limiting for public endpoints.',
+                            icon: '🔒'
+                        }
+                    ],
+                    apis: [
+                        'POST /ask - Submit a question to RAG system',
+                        'POST /etl/run - Trigger ETL pipeline',
+                        'POST /vector/initialize - Initialize vector store',
+                        'GET /health - System health check'
+                    ]
+                },
+                {
+                    id: 'rag',
+                    x: 500,
+                    y: 100,
+                    width: 120,
+                    height: 70,
+                    color: COLORS.RED,
+                    title: 'RAG System',
+                    description: 'Retrieval Augmented Generation system that enhances LLM responses with relevant context from the vector database.',
+                    icon: '🧠',
+                    submodules: [
+                        {
+                            id: 'rag-retrieval',
+                            title: 'Context Retrieval',
+                            description: 'Semantic search over document embeddings with customized relevance scoring and reranking.',
+                            icon: '🔍'
+                        },
+                        {
+                            id: 'rag-providers',
+                            title: 'LLM Providers',
+                            description: 'Multi-provider architecture with fallback chain: HuggingFace → OpenAI → Mock responder.',
+                            icon: '⚙️'
+                        },
+                        {
+                            id: 'rag-prompt',
+                            title: 'Prompt Engineering',
+                            description: 'Dynamic prompt templates that incorporate retrieved context with sophisticated formatting.',
+                            icon: '📝'
+                        }
+                    ],
+                    apis: ['answer_question(query: str) -> str']
+                },
+                {
+                    id: 'vector',
+                    x: 500,
+                    y: 250,
+                    width: 120,
+                    height: 70,
+                    color: COLORS.BLACK,
+                    title: 'Vector Store',
+                    description: 'FAISS-powered vector database that enables efficient similarity search over document embeddings.',
+                    icon: '🔍',
+                    submodules: [
+                        {
+                            id: 'vector-faiss',
+                            title: 'FAISS Index',
+                            description: 'Facebook AI Similarity Search (FAISS) index optimized for fast nearest neighbor lookup.',
+                            icon: '📊'
+                        },
+                        {
+                            id: 'vector-embeddings',
+                            title: 'Embeddings',
+                            description: 'Document vectors generated from transformer-based embedding models (OpenAI or SentenceTransformers).',
+                            icon: '🧮'
+                        },
+                        {
+                            id: 'vector-metadata',
+                            title: 'Metadata Store',
+                            description: 'Efficient mapping between vector IDs and document metadata for context reconstruction.',
+                            icon: '🏷️'
+                        }
+                    ],
+                    apis: [
+                        'similarity_search(query_vector, k=4) -> List[Document]',
+                        'add_documents(documents) -> None',
+                        'save_local(path) -> None',
+                        'load_local(path) -> VectorStore'
+                    ]
+                },
+                {
+                    id: 'etl',
+                    x: 300,
+                    y: 250,
+                    width: 120,
+                    height: 70,
+                    color: COLORS.GREEN,
+                    title: 'ETL Pipeline',
+                    description: 'Extract, Transform, Load process that ingests data from various sources, processes it, and stores it in DuckDB.',
+                    icon: '📊',
+                    submodules: [
+                        {
+                            id: 'etl-extract',
+                            title: 'Data Extraction',
+                            description: 'Async connectors for multiple data sources including APIs, CSVs, and databases.',
+                            icon: '📥'
+                        },
+                        {
+                            id: 'etl-transform',
+                            title: 'Transformation',
+                            description: 'Data cleansing, enrichment, and feature engineering pipeline with Pandas.',
+                            icon: '🔄'
+                        },
+                        {
+                            id: 'etl-load',
+                            title: 'Data Loading',
+                            description: 'Efficient batch loading into DuckDB with transaction support and schema validation.',
+                            icon: '📤'
+                        },
+                        {
+                            id: 'etl-duckdb',
+                            title: 'DuckDB',
+                            description: 'Embedded analytical database optimized for OLAP workloads with SQL interface.',
+                            icon: '🦆'
+                        }
+                    ],
+                    apis: [
+                        'process_data(source: str) -> Dict[str, Any]',
+                        'extract_data(source: str) -> DataFrame',
+                        'transform_data(data: DataFrame) -> DataFrame',
+                        'load_data(data: DataFrame) -> Dict[str, Any]'
+                    ]
+                },
+                {
+                    id: 'airflow',
+                    x: 100,
+                    y: 250,
+                    width: 120,
+                    height: 70,
+                    color: COLORS.ORANGE,
+                    title: 'Airflow',
+                    description: 'Workflow orchestration that schedules and monitors ETL processes, vector store updates, and system health checks.',
+                    icon: '⏱️',
+                    submodules: [
+                        {
+                            id: 'airflow-dags',
+                            title: 'DAG Definitions',
+                            description: 'Directed Acyclic Graphs that define workflow execution with dependencies and scheduling.',
+                            icon: '📊'
+                        },
+                        {
+                            id: 'airflow-operators',
+                            title: 'Operators',
+                            description: 'Custom Python, Bash, and API operators for task execution with proper error handling.',
+                            icon: '🔧'
+                        },
+                        {
+                            id: 'airflow-sensors',
+                            title: 'Sensors',
+                            description: 'Smart waiting mechanisms that monitor data availability and system status.',
+                            icon: '📡'
+                        },
+                        {
+                            id: 'airflow-xcom',
+                            title: 'XCom',
+                            description: 'Cross-communication system for passing data between tasks within DAGs.',
+                            icon: '🔄'
+                        }
+                    ],
+                    apis: ['ai_pipeline_dag.py', 'vector_update_dag.py', 'health_check_dag.py']
+                }
+            ];
+
+            // Define the connections between modules
+            const connections = [
+                { from: 'frontend', to: 'api', type: 'bidirectional', label: 'HTTP/REST' },
+                { from: 'api', to: 'rag', type: 'bidirectional', label: 'Sync/Async API' },
+                { from: 'rag', to: 'vector', type: 'bidirectional', label: 'Vector Search' },
+                { from: 'etl', to: 'vector', type: 'directional', label: 'Embedding Generation' },
+                { from: 'api', to: 'etl', type: 'directional', label: 'ETL Trigger' },
+                { from: 'airflow', to: 'etl', type: 'directional', label: 'ETL Scheduling' },
+                { from: 'airflow', to: 'api', type: 'directional', label: 'Health Checks' }
+            ];
+
+            // Flow paths for animation
+            const flowPaths = [
+                // User question flow
+                {
+                    name: 'Question Answering Flow',
+                    description: 'How user questions are processed through the RAG system',
+                    path: ['frontend', 'api', 'rag', 'vector', 'rag', 'api', 'frontend'],
+                    color: COLORS.PURPLE,
+                    steps: [
+                        'User submits a question via the React UI',
+                        'Frontend sends POST request to /ask endpoint',
+                        'API routes request to the RAG system',
+                        'RAG converts query to vector embedding',
+                        'Vector store finds similar documents',
+                        'RAG enriches prompt with context and generates answer',
+                        'API returns formatted response to frontend',
+                        'UI presents the answer to the user'
+                    ]
+                },
+                // ETL flow
+                {
+                    name: 'Data Ingestion Flow',
+                    description: 'How data is processed and vectorized for retrieval',
+                    path: ['airflow', 'etl', 'vector'],
+                    color: COLORS.GREEN,
+                    steps: [
+                        'Airflow triggers scheduled ETL DAG',
+                        'ETL extracts data from sources',
+                        'Raw data is transformed and cleaned',
+                        'Processed data is loaded into DuckDB',
+                        'Text is converted to vector embeddings',
+                        'Vectors are indexed in FAISS database',
+                        'Index is saved for fast retrieval'
+                    ]
+                },
+                // System monitoring flow
+                {
+                    name: 'System Health Flow',
+                    description: 'How Airflow orchestrates and monitors the system',
+                    path: ['airflow', 'api', 'etl', 'vector'],
+                    color: COLORS.ORANGE,
+                    steps: [
+                        'Airflow executes health check DAG',
+                        'System sends health probes to API',
+                        'API responds with component status',
+                        'Health check verifies ETL pipeline',
+                        'Health check verifies vector store',
+                        'Results are logged to monitoring dashboard',
+                        'Alerts are triggered for any issues'
+                    ]
+                }
+            ];
+
+            // Handle module click
+            const handleModuleClick = (module) => {
+                setActiveModule(module);
+                setActiveSubmodule(null);
+                setShowApiCallout(null);
+            };
+
+            // Handle submodule click
+            const handleSubmoduleClick = (submodule) => {
+                setActiveSubmodule(submodule);
+            };
+
+            // Toggle API display
+            const toggleApiDisplay = () => {
+                setShowApiCallout(activeModule ? (showApiCallout ? null : activeModule.id) : null);
+            };
+
+            // Start flow animation
+            const startFlowAnimation = (flowIndex) => {
+                if (isAnimating) return;
+
+                setIsAnimating(true);
+                setCurrentFlow(flowPaths[flowIndex]);
+                setActiveModule(null);
+                setActiveSubmodule(null);
+                setShowApiCallout(null);
+
+                const animateFlow = async (path, color) => {
+                    for (let i = 0; i < path.length - 1; i++) {
+                        const startModule = modules.find(m => m.id === path[i]);
+                        const endModule = modules.find(m => m.id === path[i + 1]);
+
+                        // Highlight the current module
+                        const startElement = document.getElementById(`module-${startModule.id}`);
+                        startElement.classList.add('pulse');
+
+                        // Wait a moment
+                        await new Promise(resolve => setTimeout(resolve, 600));
+
+                        // Highlight the connection
+                        const connectionElement = document.getElementById(
+                            `connection-${Math.min(modules.indexOf(startModule), modules.indexOf(endModule))}-${Math.max(modules.indexOf(startModule), modules.indexOf(endModule))}`
+                        );
+                        connectionElement.classList.add('active');
+
+                        // Create and animate the data point
+                        const svgElement = svgRef.current;
+                        const startX = startModule.x + startModule.width / 2;
+                        const startY = startModule.y + startModule.height / 2;
+                        const endX = endModule.x + endModule.width / 2;
+                        const endY = endModule.y + endModule.height / 2;
+
+                        const dataPoint = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                        dataPoint.setAttribute("cx", startX);
+                        dataPoint.setAttribute("cy", startY);
+                        dataPoint.setAttribute("r", 6);
+                        dataPoint.setAttribute("fill", color);
+                        dataPoint.setAttribute("class", "data-point");
+                        svgElement.appendChild(dataPoint);
+
+                        // Animate the data point
+                        const duration = 1000;
+                        const startTime = performance.now();
+
+                        const animatePoint = (time) => {
+                            const elapsed = time - startTime;
+                            const progress = Math.min(elapsed / duration, 1);
+
+                            const currentX = startX + progress * (endX - startX);
+                            const currentY = startY + progress * (endY - startY);
+
+                            dataPoint.setAttribute("cx", currentX);
+                            dataPoint.setAttribute("cy", currentY);
+
+                            if (progress < 1) {
+                                requestAnimationFrame(animatePoint);
+                            } else {
+                                // Remove the data point
+                                dataPoint.remove();
+
+                                // Remove the highlight from the module
+                                startElement.classList.remove('pulse');
+
+                                // If it's the last connection, highlight the end module
+                                if (i === path.length - 2) {
+                                    const endElement = document.getElementById(`module-${endModule.id}`);
+                                    endElement.classList.add('pulse');
+
+                                    setTimeout(() => {
+                                        endElement.classList.remove('pulse');
+                                        connectionElement.classList.remove('active');
+                                    }, 600);
+                                }
+                            }
+                        };
+
+                        requestAnimationFrame(animatePoint);
+
+                        // Wait for animation to complete
+                        await new Promise(resolve => setTimeout(resolve, duration + 200));
+
+                        // Remove the highlight from the connection
+                        if (i < path.length - 2) {
+                            connectionElement.classList.remove('active');
+                        }
+                    }
+
+                    setIsAnimating(false);
+                };
+
+                animateFlow(flowPaths[flowIndex].path, flowPaths[flowIndex].color);
+            };
+
+            // Reset the visualization
+            const resetVisualization = () => {
+                setActiveModule(null);
+                setActiveSubmodule(null);
+                setCurrentFlow(null);
+                setShowApiCallout(null);
+
+                // Remove all highlights
+                document.querySelectorAll('.pulse').forEach(el => el.classList.remove('pulse'));
+                document.querySelectorAll('.active').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.data-point').forEach(el => el.remove());
+            };
+
+            return (
+                <div className="flex justify-center min-h-screen antialiased relative">
+                    <div className="w-full max-w-4xl">
+                        {/* Header */}
+                        <h1 className="text-4xl font-bold mt-8 mb-2">AI Pipeline Architecture</h1>
+                        <p className="text-gray-600 mb-6">A modern data workflow combining ETL, RAG, and orchestration components with multi-provider support</p>
+
+                        {/* Main visualization */}
+                        <div className="relative w-full h-96 bg-gray-50 rounded-lg shadow-sm overflow-hidden my-6">
+                            {/* SVG container for connections and animations */}
+                            <svg
+                                ref={svgRef}
+                                className="absolute top-0 left-0 w-full h-full"
+                                style={{ zIndex: 1 }}
+                            >
+                                {/* Draw connections */}
+                                {connections.map((connection, index) => {
+                                    const fromModule = modules.find(m => m.id === connection.from);
+                                    const toModule = modules.find(m => m.id === connection.to);
+
+                                    const fromX = fromModule.x + fromModule.width / 2;
+                                    const fromY = fromModule.y + fromModule.height / 2;
+                                    const toX = toModule.x + toModule.width / 2;
+                                    const toY = toModule.y + toModule.height / 2;
+
+                                    // For bidirectional connections, curve the path slightly
+                                    const isBidirectional = connection.type === 'bidirectional';
+                                    const midX = (fromX + toX) / 2;
+                                    const midY = (fromY + toY) / 2;
+                                    const offset = 15;
+
+                                    // Calculate control point for the curve
+                                    const dx = toX - fromX;
+                                    const dy = toY - fromY;
+                                    const perpX = -dy;
+                                    const perpY = dx;
+                                    const length = Math.sqrt(perpX * perpX + perpY * perpY);
+                                    const normalizedPerpX = perpX / length;
+                                    const normalizedPerpY = perpY / length;
+
+                                    const controlX = midX + normalizedPerpX * offset;
+                                    const controlY = midY + normalizedPerpY * offset;
+
+                                    const path = isBidirectional
+                                        ? `M ${fromX} ${fromY} Q ${controlX} ${controlY} ${toX} ${toY}`
+                                        : `M ${fromX} ${fromY} L ${toX} ${toY}`;
+
+                                    // Create a unique ID based on module positions in the array
+                                    const fromIndex = modules.indexOf(fromModule);
+                                    const toIndex = modules.indexOf(toModule);
+                                    const connectionId = `connection-${Math.min(fromIndex, toIndex)}-${Math.max(fromIndex, toIndex)}`;
+
+                                    return (
+                                        <g key={`connection-${index}`}>
+                                            {/* Draw path */}
+                                            <path
+                                                id={connectionId}
+                                                d={path}
+                                                fill="none"
+                                                stroke="#86868B"
+                                                strokeWidth="2"
+                                                strokeDasharray={connection.type === 'directional' ? "5,5" : "none"}
+                                                className="transition-all duration-300"
+                                            />
+
+                                            {/* Arrow for directional connections */}
+                                            {connection.type === 'directional' && (
+                                                <marker
+                                                    id={`arrowhead-${index}`}
+                                                    markerWidth="10"
+                                                    markerHeight="7"
+                                                    refX="9"
+                                                    refY="3.5"
+                                                    orient="auto"
+                                                >
+                                                    <polygon points="0 0, 10 3.5, 0 7" fill="#86868B" />
+                                                </marker>
+                                            )}
+
+                                            {/* Use the marker */}
+                                            {connection.type === 'directional' && (
+                                                <path
+                                                    d={path}
+                                                    fill="none"
+                                                    stroke="transparent"
+                                                    strokeWidth="1"
+                                                    markerEnd={`url(#arrowhead-${index})`}
+                                                />
+                                            )}
+
+                                            {/* Connection label */}
+                                            <text
+                                                x={midX}
+                                                y={midY - 10}
+                                                textAnchor="middle"
+                                                fill="#555555"
+                                                fontSize="10"
+                                                className="connection-label"
+                                            >
+                                                {connection.label}
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+                            </svg>
+
+                            {/* Modules */}
+                            <div className="relative w-full h-full" style={{ zIndex: 2 }}>
+                                {modules.map((module) => (
+                                    <div
+                                        key={module.id}
+                                        id={`module-${module.id}`}
+                                        className="absolute rounded-lg shadow-md flex flex-col items-center justify-center text-white transition-all duration-300 cursor-pointer hover:shadow-lg hover:-translate-y-1"
+                                        style={{
+                                            left: `${module.x}px`,
+                                            top: `${module.y}px`,
+                                            width: `${module.width}px`,
+                                            height: `${module.height}px`,
+                                            backgroundColor: module.color,
+                                            zIndex: 10
+                                        }}
+                                        onClick={() => handleModuleClick(module)}
+                                    >
+                                        <div className="text-lg">{module.icon}</div>
+                                        <div className="font-semibold text-sm">{module.title}</div>
+
+                                        {/* API indicator dot */}
+                                        <div
+                                            className="absolute top-0 right-0 w-3 h-3 rounded-full"
+                                            style={{
+                                                backgroundColor: COLORS.YELLOW,
+                                                transform: 'translate(30%, -30%)',
+                                                zIndex: 20,
+                                                opacity: 0.8
+                                            }}
+                                        ></div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Details panel */}
+                        <div className="bg-gray-50 p-4 rounded-lg mb-6 min-h-40">
+                            {activeSubmodule ? (
+                                <div className="transition-opacity duration-300">
+                                    <h3 className="font-semibold text-lg" style={{ color: activeModule.color }}>
+                                        {activeModule.title} &gt; {activeSubmodule.title}
+                                    </h3>
+                                    <p className="mt-2 text-gray-700">{activeSubmodule.description}</p>
+                                </div>
+                            ) : activeModule ? (
+                                <div className="transition-opacity duration-300">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xl">{activeModule.icon}</span>
+                                        <h3 className="font-semibold text-lg" style={{ color: activeModule.color }}>{activeModule.title}</h3>
+                                        <button
+                                            className="ml-auto px-2 py-1 text-xs rounded-md text-white"
+                                            style={{ backgroundColor: activeModule.color }}
+                                            onClick={toggleApiDisplay}
+                                        >
+                                            {showApiCallout ? 'Hide APIs' : 'Show APIs'}
+                                        </button>
+                                    </div>
+                                    <p className="mb-3 text-gray-700">{activeModule.description}</p>
+
+                                    {/* API Section */}
+                                    {showApiCallout === activeModule.id && (
+                                        <div className="mt-3 p-3 rounded-md bg-gray-100">
+                                            <h4 className="font-semibold text-sm" style={{ color: activeModule.color }}>APIs:</h4>
+                                            <ul className="list-disc pl-5 mt-1 text-sm space-y-1">
+                                                {activeModule.apis.map((api, idx) => (
+                                                    <li key={idx} className="text-gray-700">{api}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {/* Submodules Section */}
+                                    <div className="mt-4">
+                                        <h4 className="font-semibold text-sm text-gray-600">Components:</h4>
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            {activeModule.submodules.map((submodule) => (
+                                                <div
+                                                    key={submodule.id}
+                                                    className="border rounded-lg p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                                                    onClick={() => handleSubmoduleClick(submodule)}
+                                                >
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span>{submodule.icon}</span>
+                                                        <span className="font-semibold text-sm">{submodule.title}</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-600 line-clamp-2">{submodule.description.split('.')[0]}.</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : currentFlow ? (
+                                <div className="transition-opacity duration-300">
+                                    <h3 className="font-semibold text-lg" style={{ color: currentFlow.color }}>{currentFlow.name}</h3>
+                                    <p className="mt-2 mb-3 text-gray-700">{currentFlow.description}</p>
+
+                                    <div className="mt-3">
+                                        <h4 className="font-semibold text-sm text-gray-600">Process Flow:</h4>
+                                        <ol className="list-decimal pl-5 mt-1 text-sm space-y-1">
+                                            {currentFlow.steps.map((step, idx) => (
+                                                <li key={idx} className="text-gray-700">{step}</li>
+                                            ))}
+                                        </ol>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <p className="text-gray-600 italic">Click on any component to see details or simulate a data flow using the buttons below.</p>
+
+                                    <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded text-sm">
+                                        <p className="text-blue-700 font-medium">Architecture Highlights</p>
+                                        <ul className="list-disc pl-4 mt-1 text-blue-600 space-y-1">
+                                            <li>Multi-provider LLM support with fallback chain</li>
+                                            <li>FAISS vector embeddings for semantic search</li>
+                                            <li>Airflow orchestration for reliable scheduling</li>
+                                            <li>Asynchronous API with FastAPI</li>
+                                            <li>DuckDB for efficient analytical queries</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Control buttons */}
+                        <div className="flex flex-wrap gap-3 mb-6">
+                            {flowPaths.map((flow, index) => (
+                                <button
+                                    key={`flow-${index}`}
+                                    className="px-4 py-2 rounded-full text-white text-sm font-medium transition-colors duration-200 disabled:opacity-50"
+                                    style={{ backgroundColor: flow.color }}
+                                    onClick={() => startFlowAnimation(index)}
+                                    disabled={isAnimating}
+                                >
+                                    Simulate {flow.name}
+                                </button>
+                            ))}
+
+                            <button
+                                className="px-4 py-2 rounded-full bg-gray-200 text-gray-700 text-sm font-medium ml-auto transition-colors duration-200 hover:bg-gray-300"
+                                onClick={resetVisualization}
+                            >
+                                Reset View
+                            </button>
+                        </div>
+
+                        {/* Architecture Description */}
+                        <div className="mb-10">
+                            <h2 className="text-2xl font-semibold mb-3">Architecture Overview</h2>
+
+                            <p className="mb-4">
+                                This interactive visualization demonstrates the key components of our AI Pipeline:
+                            </p>
+
+                            <ol className="list-decimal pl-5 mb-6 space-y-2">
+                                <li><strong>React Frontend:</strong> Modern UI built with React 18, Tailwind CSS, and custom hooks for API interactions</li>
+                                <li><strong>FastAPI Layer:</strong> Asynchronous API service with Pydantic validation, middleware, and OpenAPI documentation</li>
+                                <li><strong>RAG System:</strong> Multi-provider Retrieval Augmented Generation with semantic search and dynamic prompting</li>
+                                <li><strong>Vector Store:</strong> FAISS-powered vector database with optimized indexes for similarity search</li>
+                                <li><strong>ETL Pipeline:</strong> Async data processing with Pandas transformations and DuckDB persistence</li>
+                                <li><strong>Airflow:</strong> DAG-based workflow orchestration with custom operators and XCom for task communication</li>
+                            </ol>
+
+                            <p className="mb-4">
+                                The system features three primary data flows:
+                            </p>
+
+                            <ul className="list-disc pl-5 mb-6 space-y-2">
+                                <li><strong>Question Answering:</strong> Demonstrates how user questions generate relevant, contextual answers using RAG</li>
+                                <li><strong>Data Ingestion:</strong> Shows how new data is extracted, transformed, vectorized, and made available for retrieval</li>
+                                <li><strong>System Monitoring:</strong> Reveals how Airflow orchestrates health checks across all components</li>
+                            </ul>
+
+                            <p>
+                                The architecture implements production-grade practices including fallback chains between LLM providers,
+                                efficient vector search, robust error handling, and comprehensive monitoring.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Mount the app to the DOM
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AIPipelineVisualization />);
+    </script>
+</body>
+</html>
