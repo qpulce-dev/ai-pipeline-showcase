@@ -5,6 +5,8 @@
 ![LangChain](https://img.shields.io/badge/LangChain-0.0.335-orange)
 
 ## Project Overview
+![AI Pipeline Architecture Diagram](docs/ui.png)
+
 This project demonstrates a full-stack AI data pipeline with multi-provider LLM support, including:
 - **ETL**: Data ingestion and transformation using DuckDB
 - **AI**: LangChain RAG pipeline with OpenAI, Hugging Face, and mock fallbacks
@@ -27,8 +29,9 @@ It is designed to be lightweight, modular, and deployable locally with minimal c
 ## Architecture
 
 ![AI Pipeline Architecture Diagram](docs/architecture.png)
+###### For an interactive version of the architecture diagram, [click here](https://qpulce-dev.github.io/ai-pipeline-showcase/).
 
-The system follows a modular architecture with these key components:
+##### The system follows a modular architecture with these key components:
 
 1. **ETL Module** (`etl/run_etl.py`):
    - Extracts data from sources (simulated for demo)
@@ -55,10 +58,6 @@ The system follows a modular architecture with these key components:
    - Updates vector store on schedule
    - Handles both async and sync execution models
    - Includes robust error handling
-
-##### Interactive Architecture Diagram
-
-For an interactive version of the architecture diagram, [click here](https://qpulce-dev.github.io/ai-pipeline-showcase/).
 
 ## System Requirements
 
